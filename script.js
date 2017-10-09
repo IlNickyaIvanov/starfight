@@ -20,7 +20,9 @@ var rocket = {
 var ufo ={
   img:  document.getElementById("ufo"),
   exist:false,
-  size:width/10
+  size:width/10,
+    stepX:0,
+    stepY:0
 };
 
 var explos={
@@ -76,8 +78,15 @@ function drawBG () {
 
 function drawUFO (rand, x,y) {
     if (rand) {
-        var ux = Math.random() * (width - 2 * ufo.size) + ufo.size;
-        var uy = Math.random() * (height - 2 * ufo.size) + ufo.size;
+        var ux=0;
+        var uy=0;
+        while(ux>(width/2-uVector*60) && ux<(width/2+uVector*60) &&
+        uy>(height/2-uVector*60) && uy<(height/2+uVector*60) || ux===0 && uy===0){
+            ux = Math.random() * (width - 2 * ufo.size) + ufo.size;
+            uy = Math.random() * (height - 2 * ufo.size) + ufo.size;
+        }
+        ufo.stepX=0;
+        ufo.stepY=0;
     }
     else if (x && y){
         ux = x;
@@ -141,26 +150,11 @@ var angle=1;
 var rotate=false;
 var count=0;
 const stepTime=15;
-var menu = true;
-var logoText = "Star Fight!";
 var shotX="000";
 var shotY="000";
 var position=0;
 var isDrawNet=false;
-
-//ловец кликов
-document.onclick=function (e) {
-   if (e.pageX>(width/2-rocket.size/2)&&e.pageX<(width/2+rocket.size/2))
-       if (e.pageY>(height/2-rocket.size/2)&&e.pageY<(height/2+rocket.size/2)){
-       menu=!menu;
-       if(menu)requestAnimationFrame(loop);
-       }
-   if (!menu &&e.pageX>(button.x)&&e.pageX<(button.x+button.size*2.5)){
-           if(e.pageY>(button.y)&&e.pageY<(button.y+button.size))
-               isDrawNet=!isDrawNet;
-   }
-};
-
+var uVector=height/380;
 
 setInterval(function () {
     if(!menu)gameStart();
@@ -208,6 +202,8 @@ function shot (ar){
     var y = ar[1];
     if (x>ufo.x && x<(ufo.x+ufo.size) && y>ufo.y && y<(ufo.y+ufo.size)){
         ufo.exist=false;
+        ufo.stepX=0;
+        ufo.stepY=0;
         count=0;
         drawBAT_UFO(ufo.x,ufo.y);
         batUFO.exist=true;
@@ -275,16 +271,19 @@ function inputXY(keyCode,number) {
 }
 
 function step(){
+    if(ufo.stepX===0 && ufo.stepY===0)
     if (ufo.x > width/2){
-        var x = ufo.x-(height/380)*30;
+        ufo.stepX = -(ufo.x-width/2)/5;
     } else if(ufo.x < width/2){
-        x = ufo.x+(height/380)*30;
-    }else x=0;
+        ufo.stepX = (width/2-ufo.x)/5;
+    }else ufo.stepX=0;
     if (ufo.y > height/2){
-        var y = ufo.y - (height/380)*30;
+        ufo.stepY = -(ufo.y - height/2)/5;
     } else if (ufo.y < height/2){
-        y =  ufo.y + (height/380)*30;
-    }else y=0;
+        ufo.stepY = (height/2-ufo.y)/5;
+    }else ufo.stepY=0;
+    var x = ufo.x+ufo.stepX;
+    var y = ufo.y+ufo.stepY;
     drawUFO(false,x,y);
 }
 //метод переделывает координаты, вводимые пользователем, в понятные системе (левый верхний угол)
@@ -315,13 +314,13 @@ function drawAbsOrd(){
     context.lineTo(width,height/2);
     context.stroke();
 
+    context.lineHeight = 2;
     context.beginPath();
     context.moveTo(width/2,0);
     context.lineTo(width/2,height);
     context.stroke();
 
     context.strokeStyle = 'red';
-    var uVector=height/380;
     for (var i=0;i<7;i++){
         context.beginPath();
         context.moveTo(width/2-5,height/2-((180-i*60)*uVector));
@@ -348,6 +347,7 @@ function drawNet(){
         context.stroke();
     }
 
+    context.lineHeight=1;
     for (var j=0;j<7;j++){
         context.beginPath();
         context.moveTo(width/2-((180-j*60)*uVector),0);
@@ -356,36 +356,8 @@ function drawNet(){
     }
 }
 
-//---------------------анимация меню-------------------
-    function random(n) {
-        return ( Math.random() * n)
-    }
-    stars = new Array(600).fill().map(function() {
-        return {
-            r: random(width), s: random(0.009), a: random(Math.PI * 2)
-        };
-    });
-
-function loop() {
-    context.fillStyle = "rgba(0,0,8,0.2)";
-    context.fillRect(0,0,width,height);
-    drawRocket();
-    write(logoText,width/2,height/4,70,"center");
-    write("Нажми на ракету, чтобы начать...",width/2,height-height/10,30,"center");
-    for (var i = 0; i<stars.length;i++) {
-        stars[i].a += stars[i].s;
-        context.beginPath();
-        context.arc(Math.cos(stars[i].a) * stars[i].r + width / 2, Math.sin(stars[i].a) * stars[i].r + height / 2, 1, 0, Math.PI * 2);
-        context.closePath();
-        context.fillStyle = "white";
-        context.fill();
-    }
-    if(menu)requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-
-
-function write(text,x,y,size,baseline,position) {
+//--------------не игровые методы...------------------
+function write(text,x,y,size,baseline,position,alpha) {
     context.fillStyle = "red";
     if(baseline)switch (baseline){
         case "end":context.textAlign = "end";break;
@@ -401,7 +373,10 @@ function write(text,x,y,size,baseline,position) {
         else
             context.fillRect(x+wCh*position,y-size,size/1.8,size*1.2);
     }
-    context.fillStyle="white";
+    if(alpha)
+        context.fillStyle="rgba(255,255,255,"+alpha+")";
+    else
+        context.fillStyle="white";
     context.font="bold "+size+"px sans-serif";
     context.fillText(text,x,y);
     //alert(text);
@@ -437,3 +412,16 @@ function clearALL() {
     if (batUFO.exist)drawBAT_UFO();
     if(explos.exist)drawEX(false);
 }
+
+//ловец кликов
+document.onclick=function (e) {
+    if (e.pageX>(width/2-rocket.size/2)&&e.pageX<(width/2+rocket.size/2))
+        if (e.pageY>(height/2-rocket.size/2)&&e.pageY<(height/2+rocket.size/2)){
+            menu=!menu;
+            if(menu)requestAnimationFrame(loop);
+        }
+    if (!menu &&e.pageX>(button.x)&&e.pageX<(button.x+button.size*2.5)){
+        if(e.pageY>(button.y)&&e.pageY<(button.y+button.size))
+            isDrawNet=!isDrawNet;
+    }
+};
