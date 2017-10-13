@@ -44,7 +44,7 @@ function loop() {
     if (alpha<=0 || alpha>=1)
         pow=-pow;
     alpha+=pow;
-    write("Нажми на солнце, чтобы начать...",width/2,height-height/10,30,"center",undefined,alpha);
+    write("Нажми на Cолнце, чтобы начать...",width/2,height-height/10,30,"center",alpha);
     for (var i = 0; i<stars.length;i++) {
         stars[i].a += stars[i].s;
         context.beginPath();

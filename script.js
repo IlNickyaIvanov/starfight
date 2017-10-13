@@ -58,6 +58,7 @@ function drawBAT_UFO(x,y) {
     else context.drawImage(batUFO.img,batUFO.x,batUFO.y,batUFO.size,batUFO.size);
     if(x)batUFO.x=x;
     if(y)batUFO.y=y;
+    drawShot();
 }
 
 function drawEX (x,y) {
@@ -68,6 +69,7 @@ function drawEX (x,y) {
     }
     else
         context.drawImage(explos.img,explos.x-50,explos.y-50,100,100);
+    drawShot();
 }
 
 function drawBG () {
@@ -150,11 +152,11 @@ var angle=1;
 var rotate=false;
 var count=0;
 const stepTime=15;
-var shotX="000";
-var shotY="000";
-var position=0;
 var isDrawNet=false;
 var uVector=height/380;
+var shotX="",shotY="";
+var x=0,y=0;
+var positionX=true;
 
 setInterval(function () {
     if(!menu)gameStart();
@@ -198,8 +200,13 @@ function gameStart() {
 }
 
 function shot (ar){
+    shotY="";
+    shotX="";
+    positionX=true;
     var x = ar[0];
     var y = ar[1];
+    this.x=x;
+    this.y=y;
     if (x>ufo.x && x<(ufo.x+ufo.size) && y>ufo.y && y<(ufo.y+ufo.size)){
         ufo.exist=false;
         ufo.stepX=0;
@@ -216,21 +223,50 @@ function shot (ar){
     }
 }
 
+function drawShot(){
+    context.beginPath();
+    context.fillStyle="rgba(31,108,240,1)";
+    context.strokeStyle="rgba(31,108,240,1)";
+    context.arc(x,height/2,5,0,Math.PI*2,false);
+    context.fill();
+    context.moveTo(x,height/2);
+    context.lineTo(x,y);
+    context.stroke();
+    context.closePath();
+
+    context.beginPath();
+    context.fillStyle="rgba(29,179,49,1)";
+    context.strokeStyle="rgba(29,179,49,1)";
+    context.arc(width/2,y,5,0,Math.PI*2,false);
+    context.fill();
+    context.moveTo(width/2,y);
+    context.lineTo(x,y);
+    context.stroke();
+    context.closePath();
+}
+
 //события при нажатии на клавиатуру
 var body = document.getElementById("body");
 body.onkeyup = function (e) {
     //alert(e.keyCode);
     if(e.keyCode>47 && e.keyCode<58 || e.keyCode===189)inputXY(e.keyCode);
-    if(e.keyCode===32)shot(convert(shotX,shotY));
-    if(e.keyCode===39 && position<5)position++;
-    if(e.keyCode===37 && position>0)position--;
-    if(e.keyCode===38 && parseInt((shotX+shotY)[position])!==9) inputXY(0,parseInt((shotX+shotY)[position])+1);
-    if(e.keyCode===40 && parseInt((shotX+shotY)[position])!==0) inputXY(0,parseInt((shotX+shotY)[position])-1);
+    if(e.keyCode===32 || e.keyCode===13)shot(convert(shotX,shotY));
+    if(e.keyCode===39 && positionX){
+        positionX=false;
+        shotY="";
+    }
+    if(e.keyCode===37 && !positionX){
+        positionX=true;
+        shotX="";
+    }
+    if(e.keyCode===8)
+        if(positionX)shotX=shotX.substring(0,shotX.length-1);
+    else shotY=shotY.substring(0,shotY.length-1);
 };
 
-function inputXY(keyCode,number) {
+function inputXY(keyCode) {
     var xy="0";
-    if(!number)switch(keyCode){
+    switch(keyCode){
         case 48:xy="0";break;
         case 49:xy="1";break;
         case 50:xy="2";break;
@@ -242,32 +278,48 @@ function inputXY(keyCode,number) {
         case 56:xy="8";break;
         case 57:xy="9";break;
         case 189:xy="-";break;
+        default:break;
     }
-    else xy=""+number;
-    var result = "";
-    if(position<3){
+    if(positionX && (shotX.length<4 && shotX[0]==="-"|| shotX.length<3 && shotX[0]!=="-")){
         if (xy==='-' && shotX[0]==="-"){
-            shotX=shotX.substring(1,4);
+            shotX=shotX.substring(1,shotX.length);
         }
         else if(xy==='-'){
             shotX="-"+shotX;
         }
-        else {for(var i=0; i<shotX.length;i++){
-                result+=(((shotX[0]==='-')?(position)+1:position)===i)?xy:shotX[i];
-            }shotX=result;}
-    }else if(position>=3){
+        else shotX+=xy;
+    }else if(!positionX && (shotY.length<4 && shotY[0]==="-"|| shotY.length<3 && shotY[0]!=="-")){
         if (xy==='-' && shotY[0]==="-"){
-            shotY=shotY.substring(1,4);
+            shotY=shotY.substring(1,shotY.length);
         }
         else if(xy==='-'){
             shotY="-"+shotY;
         }
-        else {for(var j=0; j<shotY.length;j++){
-            result+=(((shotY[0]==='-')?(position-3)+1:position-3)===j)?xy:shotY[j];
-        }shotY=result;}
+        else shotY+=xy;
     }
-    if(position<5 && xy!=='-' && !number)position++;
-    else if (xy!=="-" && !number)position=0;
+
+}
+var alpha=0.5;
+var pow=0.02;
+function drawXY(){
+    var twidth=str_size("000","sans-serif",70)*1.5;
+    var size=60;
+    if (alpha<=0 || alpha>=1)
+        pow=-pow;
+    alpha+=pow;
+    if (positionX){
+        context.fillStyle="rgba(31,108,240,"+alpha+")";
+        context.fillRect(width/2-twidth-10,height-height/12-size-5,twidth,size*1.2);
+        context.fillStyle="rgba(29,179,49,1)";
+        context.fillRect(width/2+10,height-height/12-size-5,twidth,size*1.2);
+    }else{
+        context.fillStyle="rgba(31,108,240,1)";
+        context.fillRect(width/2-twidth-10,height-height/12-size-5,twidth,size*1.2);
+        context.fillStyle="rgba(29,179,49,"+alpha+")";
+        context.fillRect(width/2+10,height-height/12-size-5,twidth,size*1.2);
+    }
+    write(shotX,width/2-30,height-height/12,70,"end");
+    write(shotY,width/2+30,height-height/12,70,"start");
 }
 
 function step(){
@@ -357,8 +409,9 @@ function drawNet(){
 }
 
 //--------------не игровые методы...------------------
-function write(text,x,y,size,baseline,position,alpha) {
+function write(text,x,y,size,baseline,alpha,position) {
     context.fillStyle = "red";
+    context.textAlign ="start";
     if(baseline)switch (baseline){
         case "end":context.textAlign = "end";break;
         case "center":context.textAlign = "center";break;
@@ -406,8 +459,7 @@ function clearALL() {
     drawButton();
     drawRocket(rocket.rx, rocket.ry, angle);
     drawHearts();
-    write(shotX,width/2-10,height-height/10,70,"end",(position<3)?position:undefined);
-    write(shotY,width/2+10,height-height/10,70,"start",(position>=3)?position-3:undefined);
+    drawXY();
     if (ufo.exist)drawUFO(false);
     if (batUFO.exist)drawBAT_UFO();
     if(explos.exist)drawEX(false);
