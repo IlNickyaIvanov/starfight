@@ -4,9 +4,8 @@ canvas{
     top:0;
     left: 0;
 }
-input{
+.img{
     position: absolute;
-    z-index:100;
-    top:20px;
-    left: 850px;
+    top: 20px;
+    left: 0;
 }
