@@ -14,7 +14,8 @@ var rocket = {
     img: document.getElementById("rocket"),
     size:width/10,
     x:width / 2 - width/10/2,
-    y:height / 2 -  width/10/2
+    y:height / 2 -  width/10/2,
+    a:0
 };
 
 var ufo ={
@@ -125,18 +126,20 @@ function drawUFO (rand, x,y) {
     }
     if(heart.life<0){
         menu=true;
+        ufo.exist=false;
+        if(logoText==="")logoText = "Ваш счет: "+points;
         requestAnimationFrame(loop);
-        logoText = "Game Over";
+        points=0;
     }
 }
 
-function drawRocket(x,y,a) {
-    var dx = x+rocket.size/2;
-    var dy = y+rocket.size/2;
+function drawRocket(rx,ry,a) {
+    var dx = rx+rocket.size/2;
+    var dy = ry+rocket.size/2;
 
     if (a || rocket.a){
         if(a){
-            a = ((x<width/2)?Math.PI:0)+a;
+            a = -((x<width/2)?Math.PI:0)+a+Math.PI/2;
             rocket.a=a;
         }
         context.save();
@@ -184,12 +187,13 @@ function drawBullet(x,y,a) {
 var angle=1;
 var rotate=false;
 var count=0;
-const stepTime=15;
+const stepTime=5;
 var isDrawNet=false;
 var uVector=height/380;
 var shotX="",shotY="";
 var x=0,y=0;
 var positionX=true;
+var points = 0;
 
 setInterval(function () {
     if(!menu)gameStart();
@@ -198,7 +202,6 @@ setInterval(function () {
 function gameStart() {
     count++;
     clearALL();
-    write((stepTime-Math.trunc(count/60)),width/20,height/5,50);
     if(heart.life<0){
         heart.life=3;
     }
@@ -242,19 +245,19 @@ function shot (ar){
     var shY=parseInt(shotY);
     shotY="";
     shotX="";
-    // animate({
-    //    duration:200,
-    //    timing:function (timeFraction) {
-    //        return timeFraction;
-    //    },
-    //     draw:function(progress){
-    //        drawRocket(rocket.x,rocket.y,progress*(-Math.atan(shY/shX))+Math.PI/2);
-    //        return true;
-    //     },
-    //     onEnd:function () {}
-    // });
     animate({
        duration:1000,
+       timing:function (timeFraction) {
+           return timeFraction;
+       },
+        draw:function(progress){
+           drawRocket(rocket.x,rocket.y,-(Math.atan((shY!==0)?shY/shX:1/shX)));
+            return true;
+        },
+        onEnd:function () {}
+    });
+    animate({
+       duration:1500,
         timing:function(timeFraction){
            return Math.pow(timeFraction,4)
         },
@@ -269,6 +272,7 @@ function shot (ar){
                 ufo.stepX=0;
                 ufo.stepY=0;
                 count=0;
+                points++;
                 drawBAT_UFO(ufo.x,ufo.y);
             }
             drawEX(x,y);
@@ -299,8 +303,8 @@ function drawShot(){
 }
 
 //события при нажатии на клавиатуру
-var body = document.getElementById("body");
-body.onkeyup = function (e) {
+window.addEventListener("keydown",onKeyDown,false);
+function onKeyDown (e) {
     //alert(e.keyCode);
     if(e.keyCode>47 && e.keyCode<58 || e.keyCode===189)inputXY(e.keyCode);
     if(e.keyCode===32 || e.keyCode===13)
@@ -316,8 +320,8 @@ body.onkeyup = function (e) {
     }
     if(e.keyCode===8)
         if(positionX)shotX=shotX.substring(0,shotX.length-1);
-    else shotY=shotY.substring(0,shotY.length-1);
-};
+        else shotY=shotY.substring(0,shotY.length-1);
+}
 
 function inputXY(keyCode) {
     var xy="0";
@@ -524,20 +528,9 @@ function clearALL() {
     if (ufo.exist)drawUFO(false);
     if (batUFO.exist)drawBAT_UFO();
     if(explos.exist)drawEX(false);
+    write((stepTime-Math.trunc(count/60)),width/20,height/5,50);
+    write(points,0.9*width,0.2*height);
 }
-
-//ловец кликов
-document.onclick=function (e) {
-    if (e.pageX>(width/2-rocket.size/2)&&e.pageX<(width/2+rocket.size/2))
-        if (e.pageY>(height/2-rocket.size/2)&&e.pageY<(height/2+rocket.size/2)){
-            menu=!menu;
-            if(menu)requestAnimationFrame(loop);
-        }
-    if (!menu &&e.pageX>(button.x)&&e.pageX<(button.x+button.size*2.5)){
-        if(e.pageY>(button.y)&&e.pageY<(button.y+button.size))
-            isDrawNet=!isDrawNet;
-    }
-};
 function animate(options){
     var start = Date.now();
     requestAnimationFrame(function animate() {
