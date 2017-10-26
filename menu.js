@@ -1,11 +1,13 @@
 
-
 var canvas = document.getElementById("canvas");
 var width = canvas.width;
 var height = canvas.height;
 context = canvas.getContext("2d");
+
 var menu = true;
 var logoText = "Star Fight!";
+var alpha=0.5;
+var pow=0.02;
 
 var sun = {
     img:document.getElementById("sun"),
@@ -21,6 +23,7 @@ var earth = {
     size:width/15,
     r:height/4,
     a:0,
+    s:0.001,
     x:0,
     y:0
 };
@@ -47,17 +50,10 @@ stars = new Array(600).fill().map(function() {
     };
 });
 
-var alpha=0.5;
-var pow=0.02;
-function loop() {
+function animMenu() {
+    //анимация звезд
     context.fillStyle = "rgba(0,0,8,0.2)";
     context.fillRect(0,0,width,height);
-    drawSun();
-    write(logoText,width/2,height/4,70,"center");
-    if (alpha<=0 || alpha>=1)
-        pow=-pow;
-    alpha+=pow;
-    write("Нажми на Cолнце, чтобы начать...",width/2,height-height/10,30,"center",alpha);
     for (var i = 0; i<stars.length;i++) {
         stars[i].a += stars[i].s;
         context.beginPath();
@@ -66,46 +62,49 @@ function loop() {
         context.fillStyle = "white";
         context.fill();
     }
-    if(menu)requestAnimationFrame(loop);
+
+    //анимация Земли
+    if(earth.a>=2*Math.PI)earth.a=0;
+    earth.a+=Math.PI*earth.s;
+    drawEarth(Math.cos(earth.a)*earth.r+width/2,Math.sin(earth.a)*earth.r+height/2);
+
+    //отрисовка остальных объектов
+    drawSun();
+    write(logoText,width/2,height/6,70,"center");
+    if (alpha<=0 || alpha>=1)
+        pow=-pow;
+    alpha+=pow;
+    write("Нажми на Cолнце, чтобы начать...",width/2,height-height/10,30,"center",alpha);
+
+    if(menu)requestAnimationFrame(animMenu);
 }
-requestAnimationFrame(loop);
-animEatrh();
-function animEatrh(){
-    animate({
-        duration:5000,
-        timing:function (timeFraction) {
-            return timeFraction;
-        },
-        draw:function(progress){
-            if(earth.a>=2*Math.PI)earth.a=0;
-            earth.a+=Math.PI/700;
-            drawEarth(Math.cos(earth.a)*earth.r+width/2,Math.sin(earth.a)*earth.r+height/2);
-            return menu;
-        },
-        onEnd:function () {animEatrh()}
-    });
-}
+
+requestAnimationFrame(animMenu);
+
 //ловец кликов
 document.onclick = function (e) {
-    if(e.pageX>earth.x && e.pageY>earth.y){
-        if(e.pageX<earth.x+earth.size && e.pageY<earth.y+earth.size){
-            alert("рекорды в разработке!");
+    if(menu && checkClick(e,earth))
+        alert("рекорды в разработке!");
+    else if(checkClick(e,(menu)?sun:rocket)){
+        menu=!menu;
+        if(menu){
+            requestAnimationFrame(animMenu);
+        }else  {
+            heart.life=3;
+            gameStart();
         }
     }
-    if (e.pageX>(width/2-rocket.size/2)&&e.pageX<(width/2+rocket.size/2))
-        if (e.pageY>(height/2-rocket.size/2)&&e.pageY<(height/2+rocket.size/2)){
-            menu=!menu;
-            if(menu){
-                requestAnimationFrame(loop);
-                animEatrh();
-            }else  {
-                logoText="";
-                requestAnimationFrame(gameStart);
-            }
-        }
-    if (!menu &&e.pageX>(button.x)&&e.pageX<(button.x+button.size*2.5)){
-        if(e.pageY>(button.y)&&e.pageY<(button.y+button.size))
-            isDrawNet=!isDrawNet;
+    else if(!menu && checkClick(e,button)) {
+        isDrawNet=!isDrawNet;
     }
 };
+
+function checkClick(event,object){
+    var result = false;
+    if(event.pageX>object.x && event.pageY>object.y)
+        if(event.pageX<(object.x+object.size) && event.pageY<(object.y+object.size)) {
+            result = true;
+        }
+   return result;
+}
 
