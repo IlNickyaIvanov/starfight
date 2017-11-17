@@ -4,9 +4,14 @@ var width = canvas.width;
 var height = canvas.height;
 context = canvas.getContext("2d");
 
+
 var menu = true;
-var logoText = "Star Fight!";
+var game = false;
+const gameCount = 5;
+var isHiS = false;
+var logoText = "Start Fight!";
 var alpha=0.5;
+var alpha2=0;
 var pow=0.02;
 
 var sun = {
@@ -78,33 +83,57 @@ function animMenu() {
 
     if(menu)requestAnimationFrame(animMenu);
 }
-
 requestAnimationFrame(animMenu);
-
 //ловец кликов
 document.onclick = function (e) {
-    if(menu && checkClick(e,earth))
-        alert("рекорды в разработке!");
-    else if(checkClick(e,(menu)?sun:rocket)){
+    if(menu && checkClick(e,earth)){
+        isHiS=!isHiS;
+        requestAnimationFrame(highScore);
+    }
+    else if(isTutor && !isTask &&checkClick(e,plate)){
+        if(mesCount<messages.length)mesCount++;
+        else  isTutor=false;
+        plate.alpha=0;
+    }
+    else if(checkClick(e,(menu)?sun:rocket) && !isHiS){
         menu=!menu;
+        game =!game;
         if(menu){
             requestAnimationFrame(animMenu);
-        }else  {
+        }else {
             heart.life=3;
+            stepTime = gameCount;
             gameStart();
         }
     }
-    else if(!menu && checkClick(e,button)) {
-        isDrawNet=!isDrawNet;
+    else if(game && checkClick(e,button)) isDrawNet=!isDrawNet;
+    else if(isHiS) {
+        isHiS = false;
+        requestAnimationFrame(highScore);
     }
 };
 
 function checkClick(event,object){
     var result = false;
-    if(event.pageX>object.x && event.pageY>object.y)
-        if(event.pageX<(object.x+object.size) && event.pageY<(object.y+object.size)) {
+    if(event.pageX>object.x && event.pageY>object.y) {
+        var width = object.width || object.size;
+        var height = object.height || object.size;
+        if (event.pageX < (object.x + width)
+            && event.pageY < (object.y + height)) {
             result = true;
         }
+    }
    return result;
+}
+
+function highScore() {
+    context.fillStyle="rgba(211,35,235,"+alpha2+")";
+    if(isHiS && alpha2<1)alpha2+=0.01;
+    else if(!isHiS && alpha2>0)alpha2-=0.01;
+    context.fillRect(50,50,width- 100,height-100);
+    write("Лучшие джедаи вселенной:",width/2,125,40,"center",alpha2);
+    write("Ваш лучший счет: " + (getCookie("score")||"0"),width/2,175,30,"center",alpha2);
+    if(isHiS) requestAnimationFrame(highScore);
+    else if (alpha2>0)requestAnimationFrame(highScore);
 }
 

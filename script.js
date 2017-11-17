@@ -3,7 +3,6 @@ var canvas = document.getElementById("canvas");
 var width = canvas.width;
 var height = canvas.height;
 context = canvas.getContext("2d");
-
 //обЪекты
 var background = document.getElementById("background");
 
@@ -27,7 +26,7 @@ var explosion={
     img:document.getElementById("expl"),
     count:60,
     exist:false,
-    size:30,
+    size:60,
     x:0,
     y:0
 };
@@ -48,7 +47,7 @@ var heart={
 var button={
     img: document.getElementById("button"),
     size:width/13,
-    x:width-width/13-20,
+    x:width-width/13-15,
     y:20
 };
 
@@ -76,12 +75,11 @@ function drawEX (x,y) {
         context.drawImage(explosion.img, x -  explosion.size/2, y -  explosion.size/2, explosion.size,  explosion.size);
         explosion.x = x;
         explosion.y = y;
-        explosion.exist=true;
-        explosion.count=60;
+        explosion.exist = true;
+        explosion.count = 60;
     }
     else
         context.drawImage(explosion.img,explosion.x-50,explosion.y-50,100,100);
-    drawShot();
 }
 
 function drawBG () {
@@ -103,8 +101,8 @@ function drawUFO (rand, x,y) {
         ufo.stepY=0;
     }
     else if (x && y){
-        ux = x;
-        uy = y;
+        ux = x-ufo.size/2;
+        uy = y-ufo.size/2;
     }
     else {
         ux=ufo.x;
@@ -124,8 +122,11 @@ function drawUFO (rand, x,y) {
     }
     if(heart.life<0){
         menu=true;
+        game= false;
         ufo.exist=false;
         logoText = "Ваш счет: "+points;
+        if(points>(getCookie("score")||0))
+            setCookie("score",points);
         requestAnimationFrame(animMenu);
         points=0;
         heart.life=1;
@@ -177,7 +178,7 @@ function drawBullet(x,y,a) {
 
 //----------------игровой процесс---------------------------------------------------------------------------------------
 var count=0;
-var stepTime=10;
+var stepTime=0;//задается GameCount
 var isDrawNet=false;
 var uVector=height/380;
 var shotX="",shotY="";
@@ -188,12 +189,12 @@ var alpha=0.5;
 var pow=0.02;
 
 function gameStart() {
-    count++;
+    if(!isTutor)count++;
     if (count===(60*stepTime)){
         count=0;
         step();
     }
-    if (!ufo.exist){
+    if (!ufo.exist && !isTutor){
         drawUFO(true);
     }
     //--------для обЪектов, исчезающий после некоторого времени-----------
@@ -210,7 +211,8 @@ function gameStart() {
         }
     }
     clearALL();
-    if(!menu)requestAnimationFrame(gameStart);
+    if(game)requestAnimationFrame(gameStart);
+    if(isTutor)requestAnimationFrame(tutor);
 }
 
 function clearALL() {
@@ -247,6 +249,7 @@ body.onkeydown = function (e) {
     if(e.keyCode===8)
         if(positionX)shotX=shotX.substring(0,shotX.length-1);
         else shotY=shotY.substring(0,shotY.length-1);
+    if(e.keyCode===187)deleteCookie();
 };
 
 function shot (ar) {
@@ -287,11 +290,12 @@ function shot (ar) {
                 ufo.stepX=0;
                 ufo.stepY=0;
                 count=0;
-                if(stepTime>1)stepTime-=1;
+                if(stepTime>3 && !isTutor)stepTime-=1;
                 points++;
                 drawBAT_UFO(ufo.x,ufo.y);
             }
             drawEX(x,y);
+            drawShot();
         }
     });
 }
@@ -383,8 +387,8 @@ function step(){
         if (ufo.y) ufo.stepY = (ufo.y - ufo.size/2> height / 2)?-(ufo.y + ufo.size/2 - height / 2) / 5:(height / 2 - (ufo.y + ufo.size/2)) / 5;
         else ufo.stepY = 0;
     }
-    var fromX = ufo.x;
-    var fromY = ufo.y;
+    var fromX = ufo.x+ufo.size/2;
+    var fromY = ufo.y+ufo.size/2;
     animate({
         duration:1000,
         timing:function (timeFraction) {
@@ -468,33 +472,7 @@ function drawNet(){
     }
 }
 
-function write(text,x,y,size,baseline,alpha,position) {
-    context.fillStyle = "red";
-    context.textAlign ="start";
-    if(baseline)switch (baseline){
-        case "end":context.textAlign = "end";break;
-        case "center":context.textAlign = "center";break;
-        default:context.textAlign ="start";break;
-    }
-    if(position===0 || position){
-        var wCh = parseInt(str_size(text,"sans-serif",size))/text.length;
-        if(text[0]==='-')position++;
-        if(baseline==="end") {
-            context.fillRect(x - wCh*text.length + wCh*position, y - size, size / 1.8, size*1.2);
-        }
-        else
-            context.fillRect(x+wCh*position,y-size,size/1.8,size*1.2);
-    }
-    if(alpha)
-        context.fillStyle="rgba(255,255,255,"+alpha+")";
-    else
-        context.fillStyle="white";
-    context.font="bold "+size+"px sans-serif";
-    context.fillText(text,x,y);
-    //alert(text);
-}
-
-function str_size(text, fontfamily, fontsize) {
+function str_size(text, fontfamily, fontsize)  {
     var str = document.createTextNode(text);
     var str_size = [];
     var obj = document.createElement('A');
@@ -522,3 +500,30 @@ function animate(options){
             options.onEnd();
     });
 }
+
+
+//функция, которая всеми силами пытается устранить минусы выведения текста в canavas
+function write(text,x,y,size,baseline,alpha) {
+    context.textAlign ="start";
+    text = text.toString();
+    if(baseline)switch (baseline){
+        case "end":context.textAlign = "end";break;
+        case "center":context.textAlign = "center";break;
+        default:context.textAlign ="start";break;
+    }
+    if(alpha)
+        context.fillStyle="rgba(255,255,255,"+alpha+")";
+    else
+        context.fillStyle="white";
+    context.font="bold "+size+"px sans-serif";
+    if(text.indexOf("\n")!==-1){
+        var rows = text.split("\n");
+        for (var i=0;i<rows.length;i++){
+            write(rows[i],x,y,size,"center",alpha);
+            y+=size;
+        }
+    }
+    else context.fillText(text,x,y);
+}
+
+//определение по куки, пройден ли раньше тутор
