@@ -7,12 +7,22 @@ context = canvas.getContext("2d");
 
 var menu = true;
 var game = false;
-const gameCount = 5;
+const gameCount = 15;
 var isHiS = false;
 var logoText = "Start Fight!";
 var alpha=0.5;
 var alpha2=0;
 var pow=0.02;
+var top_players = {
+    "Darina":666,
+    "Vasya":500,
+    "Jenya":300,
+    "Ivan":100,
+    "Alisa":40,
+    "Oleg":25,
+    "BigBoss":18,
+    "Kurva228":13
+};
 
 var sun = {
     img:document.getElementById("sun"),
@@ -101,8 +111,10 @@ document.onclick = function (e) {
         if(menu){
             requestAnimationFrame(animMenu);
         }else {
-            heart.life=3;
-            stepTime = gameCount;
+            if(heart.life===0){
+                heart.life=3;
+                stepTime = gameCount;
+            }
             gameStart();
         }
     }
@@ -131,9 +143,26 @@ function highScore() {
     if(isHiS && alpha2<1)alpha2+=0.01;
     else if(!isHiS && alpha2>0)alpha2-=0.01;
     context.fillRect(50,50,width- 100,height-100);
-    write("Лучшие джедаи вселенной:",width/2,125,40,"center",alpha2);
-    write("Ваш лучший счет: " + (getCookie("score")||"0"),width/2,175,30,"center",alpha2);
+    write("Ваш лучший счет: " + (getCookie("score")||"0"),width/2,125,30,"center",alpha2);
+    write("Лучшие джедаи вселенной:",width/2,175,40,"center",alpha2);
     if(isHiS) requestAnimationFrame(highScore);
     else if (alpha2>0)requestAnimationFrame(highScore);
+    drawTable(top_players);
+}
+
+function drawTable(top_players){//сюда передавать данные с сервера!!!
+  var count=0;
+  for (key in top_players){
+      context.fillStyle = "rgba("+(247-count*15)+","+(54+count*15)+","+(54+count*15)+","+alpha2+")";
+      context.fillRect(50+(width-100)/4,200+count*60,(width-100)/4,50);
+
+      write(key+"",50+3*(width-100)/8,200+count*60+40, 40,"center",alpha2);
+
+      context.fillStyle = "rgba("+(247-count*15)+","+(54+count*15)+","+(54+count*15)+","+alpha2+")";
+      context.fillRect(60+(width-100)/2,200+count*60,(width-100)/4,50);
+
+      write(top_players[key+""],60+5*(width-100)/8,200+count*60+40,40,"center",alpha2);
+      count++;
+  }
 }
 

@@ -16,7 +16,8 @@ var mesCount = 0;
 
 //0 в конце - положения окна по центру (по умолчанию оно в углу)
 //в квадртных скобках положение тарелки
-var messages = ["Добро Пожаловать в игру,\nмой юнный падаван! 0","Уничтожить цель![120,120]","Сообщение 3"];
+var messages = ["Добро Пожаловать в игру,\nмой юнный падаван! 0","Злые тарелки атакуют ракету!\n Помоги её защитить\n и спасти вселенную! 0",
+"Первое число это\n положение тарелки по X,\n а второе по Y\n Ликвидируй цель![120,120]"];
 
 function tutor() {
     if(isTask && !ufo.exist){
@@ -49,7 +50,7 @@ function drawPlate(tittle,text) {
         isTask=true;
         var ufoXY=(text.substring(text.indexOf("[")+1,text.indexOf("]"))).split(",");
         ufoXY=convert(ufoXY[0],ufoXY[1]);
-        drawUFO(false,ufoXY[0],ufoXY[1]);
+        drawUFO(ufo,false,ufoXY[0],ufoXY[1]);
         text=text.substring(0,text.indexOf("["));
     }
     write(text,plate.x+plate.width/2,plate.y+plate.height/2,25,"center");
