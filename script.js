@@ -55,7 +55,8 @@ var heart = {
 };
 
 var button = {
-    img: document.getElementById("button"),
+    img1: document.getElementById("button"),
+    img2: document.getElementById("cl_button"),
     size: width / 13,
     x: width - width / 13 - 15,
     y: 20
@@ -174,9 +175,11 @@ function drawHearts() {
 }
 
 function drawButton() {
-    if (isDrawNet)
+    if (isDrawNet) {
         drawNet();
-    context.drawImage(button.img, button.x, button.y, button.size, button.size);
+        context.drawImage(button.img2, button.x, button.y, button.size, button.size);
+    }
+    else context.drawImage(button.img1, button.x, button.y, button.size, button.size);
     //write("сетка",button.x+button.size/4,button.y+button.size/1.5,65);
 }
 
@@ -362,8 +365,8 @@ function shot(ar) {
                             batUFO.type = hitting;
                             drawBAT_UFO(object.x, object.y);
                             count = 0;
-                            if (stepTime > 10 && !isTutor) stepTime -= 1;
-                            else {
+                            if(stepTime>5)stepTime -= 1;
+                            if (stepTime < 10 && !isTutor && wave<2) {
                                 wave++;
                                 stepTime = gameCount;
                             }
