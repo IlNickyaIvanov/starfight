@@ -104,7 +104,6 @@ function drawEX(x, y) {
     }
     else
         context.drawImage(explosion.img, explosion.x - 50, explosion.y - 50, 100, 100);
-    drawShot();
 }
 
 function drawBG() {
@@ -145,6 +144,8 @@ function drawUFO(ufo,rand, x, y) {
         menu = true;
         game = false;
         ufo.exist = false;
+        or_ufo.exist = false;
+        life.exist = false;
         logoText = "Ваш счет: " + points;
         if (points > (getCookie("score") || 0))
             setCookie("score", points);
@@ -312,7 +313,7 @@ body.onkeydown = function (e) {
     if (e.keyCode === 8)
         if (positionX) shotX = shotX.substring(0, shotX.length - 1);
         else shotY = shotY.substring(0, shotY.length - 1);
-    if (e.keyCode === 187) deleteCookie();
+    //if (e.keyCode === 187) deleteCookie();
 };
 
 function shot(ar) {
@@ -324,6 +325,8 @@ function shot(ar) {
     var shX = parseInt(shotX);
     var shY = parseInt(shotY);
     var startAngle = rocket.a;
+    this.x=0;
+    this.y=0;
     shotY = "";
     shotX = "";
     animate({
@@ -388,25 +391,32 @@ function checkShot(x,y){
 }
 
 function drawShot() {
-    context.beginPath();
-    context.fillStyle = "rgba(31,108,240,1)";
-    context.strokeStyle = "rgba(31,108,240,1)";
-    context.arc(x, height / 2, 5, 0, Math.PI * 2, false);
-    context.fill();
-    context.moveTo(x, height / 2);
-    context.lineTo(x, y);
-    context.stroke();
-    context.closePath();
+    if(shotX!=="" || shotY!=="") {
+        var conv = convert(shotX, shotY);
+        x = conv[0];
+        y = conv[1];
 
-    context.beginPath();
-    context.fillStyle = "rgba(29,179,49,1)";
-    context.strokeStyle = "rgba(29,179,49,1)";
-    context.arc(width / 2, y, 5, 0, Math.PI * 2, false);
-    context.fill();
-    context.moveTo(width / 2, y);
-    context.lineTo(x, y);
-    context.stroke();
-    context.closePath();
+        context.beginPath();
+        context.fillStyle = "rgba(31,108,240,1)";
+        context.strokeStyle = "rgba(31,108,240,1)";
+        context.arc(x, height / 2, 5, 0, Math.PI * 2, false);
+        context.fill();
+        context.moveTo(x, (y === 0) ? 0 : height / 2);
+        context.lineTo(x, (y === 0) ? height : y);
+        context.stroke();
+        context.closePath();
+
+        context.beginPath();
+        context.fillStyle = "rgba(29,179,49,1)";
+        context.strokeStyle = "rgba(29,179,49,1)";
+        context.arc(width / 2, y, 5, 0, Math.PI * 2, false);
+        context.fill();
+        context.moveTo((x === 0) ? 0 : width / 2, y);
+        context.lineTo((x === 0) ? width : x, y);
+        context.stroke();
+        context.closePath();
+    }
+    requestAnimationFrame(drawShot);
 }
 
 function inputXY(keyCode) {
@@ -465,7 +475,9 @@ function inputXY(keyCode) {
         }
         else shotY += xy;
     }
-
+    var conv = convert(shotX, shotY);
+    x = conv[0];
+    y = conv[1];
 }
 
 function drawXY() {

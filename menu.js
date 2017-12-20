@@ -103,6 +103,13 @@ document.onclick = function (e) {
     else if(isTutor && !isTask &&checkClick(e,plate)){
         if(mesCount<messages.length)mesCount++;
         else  isTutor=false;
+        if(mesCount===1 && shotX==="" && shotY==="")
+        {shotX="120";shotY="120"}
+        if(mesCount===3){
+            var xy=["60","60"];
+            xy = convert(xy[0],xy[1]);
+            drawUFO(ufo,false,xy[0],xy[1]);
+        }
         plate.alpha=0;
     }
     else if(checkClick(e,(menu)?sun:rocket) && !isHiS){
@@ -116,9 +123,11 @@ document.onclick = function (e) {
                 stepTime = gameCount;
             }
             gameStart();
+            requestAnimationFrame(drawShot);
         }
     }
     else if(game && checkClick(e,button)) isDrawNet=!isDrawNet;
+    else if(game) positionX=-positionX;
     else if(isHiS) {
         isHiS = false;
         requestAnimationFrame(highScore);
