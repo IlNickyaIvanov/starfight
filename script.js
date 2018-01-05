@@ -14,20 +14,23 @@ var rocket = {
 };
 
 var ufo = {
+    type:1,
     img: document.getElementById("ufo"),
     exist: false,
     size: width / 10,
     stepX: 0,
     stepY: 0
 };
-
 var or_ufo = {
+    type:2,
     img: document.getElementById("or_ufo"),
     exist: false,
     size: width / 10,
     stepX: 0,
     stepY: 0
 };
+
+var enemy = [];
 
 var explosion = {
     img: document.getElementById("expl"),
@@ -80,13 +83,15 @@ var life = {
 };
 
 //отрисовка обЪектов
-function drawBAT_UFO(x, y) {
+function drawBAT_UFO(x, y,type) {
     if (x && y) {
         batUFO.exist = true;
         batUFO.count = 120;
         batUFO.x = x;
         batUFO.y = y;
     }
+    if(type)
+        batUFO.type = type;
     if (batUFO.type === 1)
         context.drawImage(ufo.img, batUFO.x, batUFO.y, batUFO.size, batUFO.size);
     else if (batUFO.type === 2)
@@ -119,10 +124,12 @@ function drawUFO(ufo, rand, x, y) {
         var uy = randXY.y;
         ufo.stepX = 0;
         ufo.stepY = 0;
+        ufo.exist = true;
     }
     else if (x && y) {
         ux = x - ufo.size / 2;
         uy = y - ufo.size / 2;
+        ufo.exist = true;
     }
     else {
         ux = ufo.x;
@@ -134,9 +141,10 @@ function drawUFO(ufo, rand, x, y) {
     ufo.exist = true;
     if ((x + ufo.size / 2) > rocket.x && x < (rocket.x + rocket.size)) {
         if ((y + ufo.size / 2) > rocket.y && y < (rocket.y + rocket.size)) {
+            ufo.exist = false;
+            enemy.splice(ufo.id, 1);
             heart.life--;
             clearALL();
-            ufo.exist = false;
             //drawUFO(true);
         }
     }
@@ -219,14 +227,15 @@ function gameStart() {
     if (!isTutor) count++;
     if (count === (60 * stepTime)) {
         count = 0;
-        step();
+        for (var i=0; i<enemy.length;i++)
+            if(enemy[i].type===1)step(enemy[i]);
     }
-    if (!ufo.exist && !isTutor) {
-        drawUFO(ufo, true);
+    if (Math.random()>=0.5 && !isTutor && enemy.length<=points/6) {
+        add_cloneUFO(enemy,ufo);
     }
-    if (wave > 1 && !or_ufo.exist) {
-        drawUFO(or_ufo, true);
-        animUFO2();
+    if (wave > 1 && Math.random()<0.5 && enemy.length<=points/6) {
+        add_cloneUFO(enemy,or_ufo);
+        animUFO2(enemy[enemy.length-1],enemy.length-1);
     }
     //--------для обЪектов, исчезающий после некоторого времени-----------
     if (explosion.exist && explosion.count > 0) {
@@ -264,7 +273,8 @@ function gameStart() {
     }
     clearALL();
     if (game) requestAnimationFrame(gameStart);
-    if (isTutor) requestAnimationFrame(tutor);
+    if (isTutor)
+        requestAnimationFrame(tutor);
 }
 
 function gameOver(){
@@ -273,12 +283,9 @@ function gameOver(){
     wave=1;
     menu = true;
     game = false;
-    ufo.exist = false;
-    or_ufo.exist = false;
+    enemy.length=0;
     life.exist = false;
     logoText = "Ваш счет: " + points;
-    if (points > (getCookie("score") || 0))
-        setCookie("score", points);
     requestAnimationFrame(animMenu);
     points = 0;
     heart.life = 0;
@@ -292,8 +299,9 @@ function clearALL() {
     drawRocket();
     drawHearts();
     drawXY();
-    if (ufo.exist) drawUFO(ufo, false);
-    if (or_ufo.exist) drawUFO(or_ufo, false);
+    for (var i =0;i<enemy.length;i++)
+        drawUFO(enemy[i], false);
+    for (i =0;i<enemy.length;i++)drawUFO(enemy[i], false);
     if (life.exist) drawLife();
     if (batUFO.exist) drawBAT_UFO();
     if (explosion.exist) drawEX(false);
@@ -320,7 +328,7 @@ body.onkeydown = function (e) {
     if (e.keyCode === 8)
         if (positionX) shotX = shotX.substring(0, shotX.length - 1);
         else shotY = shotY.substring(0, shotY.length - 1);
-    //if (e.keyCode === 187) deleteCookie();
+    if (e.keyCode === 187) destroy_all();
 };
 
 function shot(ar) {
@@ -359,34 +367,36 @@ function shot(ar) {
                 onEnd: function () {
                     var hitting = checkShot(x, y);
                     var object = null;
-                    switch (hitting) {
+                    switch (hitting[0]) {
                         case (1):
-                            object = ufo;
-                            break;
                         case (2):
-                            object = or_ufo;
+                            object = enemy;
                             break;
                         case (3):
                             object = life;
                             break;
                     }
                     if (object !== null) {
-                        object.exist = false;
-                        object.stepX = 0;
-                        object.stepY = 0;
                         points++;
-                        if (hitting === 3)
+                        if (points > (getCookie("score") || 0)){
+                            setCookie("score", points);
+                            notice("Новый рекорд!\n"+points,180);
+                        }
+                        if (hitting [0]=== 3) {
                             heart.life++;
+                            life.exist = false;
+                        }
                         else {
-                            batUFO.type = hitting;
-                            drawBAT_UFO(object.x, object.y);
+                            batUFO.type = hitting[0];
+                            drawBAT_UFO(object[hitting[1]].x, object[hitting[1]].y);
                             count = 0;
                             if (stepTime > 5) stepTime -= 1;
                             //усовершенствовать после введения других видов противников
-                            if (points>5 && !isTutor && wave < 2) {
+                            if (points>=5 && !isTutor && wave < 2) {
                                 wave=2;
                                 stepTime = gameCount;
                             }
+                            object.splice(hitting[1],1);
                         }
                     }
                     drawEX(x, y);
@@ -397,15 +407,14 @@ function shot(ar) {
 }
 
 function checkShot(x, y) {
-    var result = 0;
-    if (checkClick({pageX: x, pageY: y}, ufo)) result = 1;
-    else if (checkClick({pageX: x, pageY: y}, or_ufo)) result = 2;
-    else if (checkClick({pageX: x, pageY: y}, {
+    for (var i = 0;i<enemy.length;i++)
+        if (checkClick({pageX: x, pageY: y}, enemy[i])) return [enemy[i].type,i];
+    if (checkClick({pageX: x, pageY: y}, {
             x: life.x - width / 12,
             y: life.y - width / 12,
             size: width / 6
-        })) result = 3;
-    return result;
+        })) return [3,0];
+    return 0;
 }
 
 function drawShot() {
@@ -519,7 +528,7 @@ function drawXY() {
     write(shotY, width / 2 + 30, height - height / 12, 70, "start");
 }
 
-function step() {
+function step(ufo) {
     //если тарелка создается впервые, то у нее нет шаговых пременных, их нужно создать для каждой индивидуально
     if (ufo.stepX === 0 && ufo.stepY === 0) {
         if (ufo.x) ufo.stepX = (ufo.x - ufo.size / 2 > width / 2) ? -(ufo.x + ufo.size / 2 - width / 2) / 5 : (width / 2 - (ufo.x + ufo.size / 2)) / 5;
@@ -543,7 +552,7 @@ function step() {
     });
 }
 
-function animUFO2() {
+function animUFO2(or_ufo,id) {
     var x = or_ufo.x;
     var y = or_ufo.y;
     animate({
@@ -556,6 +565,10 @@ function animUFO2() {
             return (or_ufo.exist && game);
         },
         onEnd: function () {
+            if(or_ufo.exist) {
+                enemy.splice(id, 1);
+                heart.life--;
+            }
         }
     });
 }
@@ -669,34 +682,21 @@ function randomXY() {
     return {x: ux, y: uy};
 }
 
-//функция, которая всеми силами пытается устранить минусы выведения текста в canvas
-function write(text, x, y, size, baseline, alpha) {
-    context.textAlign = "start";
-    text = text.toString();
-    if (baseline) switch (baseline) {
-        case "end":
-            context.textAlign = "end";
-            break;
-        case "center":
-            context.textAlign = "center";
-            break;
-        default:
-            context.textAlign = "start";
-            break;
+function add_cloneUFO(array,object){
+    var clone = {};
+    for (var key in ufo) {
+        clone[key]=object[key];
     }
-    if (alpha)
-        context.fillStyle = "rgba(255,255,255," + alpha + ")";
-    else
-        context.fillStyle = "white";
-    context.font = "bold " + size + "px sans-serif";
-    if (text.indexOf("\n") !== -1) {
-        var rows = text.split("\n");
-        for (var i = 0; i < rows.length; i++) {
-            write(rows[i], x, y, size, "center", alpha);
-            y += size;
-        }
+    clone.id=enemy.length;
+    array.push(clone);
+    drawUFO(array[array.length-1],true);
+}
+
+function destroy_all(){
+    for (var i=0;i<enemy.length;i++){
+        drawBAT_UFO(enemy[i].x, enemy[i].y,enemy[i].type);
     }
-    else context.fillText(text, x, y);
+    enemy=[];
 }
 
 //определение по куки, пройден ли раньше тутор

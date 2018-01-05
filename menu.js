@@ -40,7 +40,8 @@ var earth = {
     a:0,
     s:0.001,
     x:0,
-    y:0
+    y:0,
+    exist:(!!getCookie("tutorial"))
 };
 
 function drawSun() {
@@ -59,7 +60,7 @@ function drawEarth(x,y) {
 function random(n) {
     return ( Math.random() * n)
 }
-stars = new Array(600).fill().map(function() {
+stars = new Array(300).fill().map(function() {
     return {
         r: random(width), s: random(0.009), a: random(Math.PI * 2)
     };
@@ -79,9 +80,11 @@ function animMenu() {
     }
 
     //анимация Земли
-    if(earth.a>=2*Math.PI)earth.a=0;
-    earth.a+=Math.PI*earth.s;
-    drawEarth(Math.cos(earth.a)*earth.r+width/2,Math.sin(earth.a)*earth.r+height/2);
+    if(earth.exist) {
+        if (earth.a >= 2 * Math.PI) earth.a = 0;
+        earth.a += Math.PI * earth.s;
+        drawEarth(Math.cos(earth.a) * earth.r + width / 2, Math.sin(earth.a) * earth.r + height / 2);
+    }
 
     //отрисовка остальных объектов
     drawSun();
@@ -101,8 +104,10 @@ document.onclick = function (e) {
         requestAnimationFrame(highScore);
     }
     else if(isTutor && !isTask &&checkClick(e,plate)){
-        if(mesCount<messages.length)mesCount++;
-        else  isTutor=false;
+        if(mesCount<messages.length)
+            mesCount++;
+        else
+            isTutor=false;
         if(mesCount===1 && shotX==="" && shotY==="")
         {shotX="120";shotY="120"}
         plate.alpha=0;
