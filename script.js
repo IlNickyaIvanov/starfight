@@ -232,6 +232,7 @@ var enemy_points=0;
 var alpha = 0.5;
 var pow = 0.02;
 var wave = 1;
+var newHighScore=false;
 
 function gameStart() {
     if (!isTutor) count++;
@@ -278,9 +279,15 @@ function gameOver() {
     game = false;
     enemy.length = 0;
     life.exist = false;
-    logoText = "Ваш счет: " + points;
+    if (newHighScore) {
+        setCookie("score",points);
+        logoText = "Новый рекорд!\n" + points;
+        newHighScore=false;
+    }
+    else logoText = "Ваш счет: " + points;
     requestAnimationFrame(animMenu);
     points = 0;
+    enemy_points = 0;
     heart.life = 0;
 }
 
@@ -301,7 +308,7 @@ function clearALL() {
     if (star.exist) drawBonus(star);
     if (explosion.exist) drawEX(false);
     write(Math.round(stepTime - count / 60), width / 20, height / 5, 50);
-    write(points, 0.9 * width, 0.2 * height);
+    write(points, 0.95 * width, 0.2 * height,50,"center","1",(newHighScore)?"250,161,160":undefined);
 }
 
 //события при нажатии на клавиатуру
@@ -323,7 +330,7 @@ body.onkeydown = function (e) {
     if (e.keyCode === 8)
         if (positionX) shotX = shotX.substring(0, shotX.length - 1);
         else shotY = shotY.substring(0, shotY.length - 1);
-    if (e.keyCode === 187) destroy_all();
+    //if (e.keyCode === 187) destroy_all();
 };
 
 function shot(ar) {
@@ -384,7 +391,8 @@ function shot(ar) {
                             enemy_points+=points/6;
                         else enemy_points = points;
 
-                        if (points > (getCookie("score") || 0)) {
+                        if (points > (getCookie("score") || 0) && !newHighScore) {
+                            newHighScore=true;
                             setCookie("score", points);
                             notice("Новый рекорд!\n" + points, 180);
                         }
@@ -410,12 +418,12 @@ function shot(ar) {
 function checkShot(x, y) {
     for (var i = 0; i < enemy.length; i++)
         if (checkClick({pageX: x, pageY: y}, enemy[i])) return [enemy[i].type, i];
-    if (checkClick({pageX: x, pageY: y}, {
+    if (life.exist && checkClick({pageX: x, pageY: y}, {
             x: life.x - width / 12,
             y: life.y - width / 12,
             size: width / 6
         })) return [3, 0];
-    if (checkClick({pageX: x, pageY: y}, {
+    if (star.exist && checkClick({pageX: x, pageY: y}, {
             x: star.x - width / 12,
             y: star.y - width / 12,
             size: width / 6
@@ -542,15 +550,17 @@ function step(ufo) {
         if (ufo.y) ufo.stepY = (ufo.y - ufo.size / 2 > height / 2) ? -(ufo.y + ufo.size / 2 - height / 2) / 5 : (height / 2 - (ufo.y + ufo.size / 2)) / 5;
         else ufo.stepY = 0;
     }
-    var fromX = ufo.x + ufo.size / 2;
-    var fromY = ufo.y + ufo.size / 2;
+    var fromX = ufo.x;// + ufo.size / 2;
+    var fromY = ufo.y;// + ufo.size / 2;
     animate({
         duration: 1000,
         timing: function (timeFraction) {
             return Math.pow(timeFraction, 5);
         },
         draw: function (progress) {
-            drawUFO(ufo, false, ufo.stepX * progress + fromX, ufo.stepY * progress + fromY);
+            ufo.x = ufo.stepX * progress + fromX;
+            ufo.y = ufo.stepY * progress + fromY;
+            //drawUFO(ufo, false, ufo.stepX * progress + fromX, ufo.stepY * progress + fromY);
             return ufo.exist;
         },
         onEnd: function () {
@@ -682,7 +692,7 @@ function animate(options) {
 function createBonus() {
     var randXY = randomXY();
     var bonus = {};
-    if (Math.random()>=0.4) bonus=star;
+    if (Math.random()>=0.8) bonus=star;
     else bonus = life;
     drawBonus(bonus,randXY.x, randXY.y);
     animate({
@@ -709,8 +719,8 @@ function randomXY() {
     var rand=120;
     while (ux + ufo.size / 2 > (width / 2 - uVector * rand) && ux + ufo.size / 2 < (width / 2 + uVector * rand) &&
     uy + ufo.size / 2 > (height / 2 - uVector * rand) && uy + ufo.size / 2 < (height / 2 + uVector * rand) || ux === 0 && uy === 0) {
-        ux = Math.random() * width;
-        uy = Math.random() * height;
+        ux = Math.random() * (width-ufo.size);
+        uy = Math.random() * (height-ufo.size);
     }
     return {x: ux, y: uy};
 }
@@ -754,6 +764,6 @@ function destroy_all() {
         points++;
     }
     enemy = array;
-    enemy_points=0;
+    enemy_points = 0;
     stepTime = gameCount;
 }

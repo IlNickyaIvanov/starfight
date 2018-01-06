@@ -10,6 +10,7 @@ var game = false;
 const gameCount = 15;
 var isHiS = false;
 var logoText = "Start Fight!";
+var bottomText = "Нажми на Cолнце, чтобы начать...";
 var alpha=0.5;
 var alpha2=0;
 var pow=0.02;
@@ -92,7 +93,7 @@ function animMenu() {
     if (alpha<=0 || alpha>=1)
         pow=-pow;
     alpha+=pow;
-    write("Нажми на Cолнце, чтобы начать...",width/2,height-height/10,30,"center",alpha);
+    write(bottomText,width/2,height-height/10,30,"center",alpha);
 
     if(menu)requestAnimationFrame(animMenu);
 }
@@ -117,11 +118,16 @@ document.onclick = function (e) {
         game =!game;
         if(menu){
             requestAnimationFrame(animMenu);
+            if (heart.life>0) {logoText = "Пауза";bottomText = "Нажми на Солнце, чтобы продолжить..."}
+            else  {logoText = "Star Fight!";bottomText = "Нажми на Солнце, чтобы начать..."}
         }else {
             if(heart.life===0){
                 heart.life=3;
                 stepTime = gameCount;
             }
+            if (enemy.length>0)
+                for (var i =0;i<enemy.length;i++)
+                    if (enemy[i].type===2 && !enemy[i].fire) animUFO2(enemy[i],i);
             gameStart();
             requestAnimationFrame(drawShot);
         }

@@ -56,7 +56,7 @@ function deleteCookie() {
 }
 
 //функция, которая всеми силами пытается устранить минусы выведения текста в canvas
-function write(text, x, y, size, baseline, alpha) {
+function write(text, x, y, size, baseline, alpha, color) {
     context.textAlign = "start";
     text = text.toString();
     if (baseline) switch (baseline) {
@@ -70,10 +70,9 @@ function write(text, x, y, size, baseline, alpha) {
             context.textAlign = "start";
             break;
     }
-    if (alpha)
-        context.fillStyle = "rgba(255,255,255," + alpha + ")";
-    else
-        context.fillStyle = "white";
+
+    context.fillStyle = "rgba("+(color || "255,255,255")+"," + (alpha || "1") + ")";
+
     context.font = "bold " + size + "px sans-serif";
     if (text.indexOf("\n") !== -1) {
         var rows = text.split("\n");
