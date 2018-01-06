@@ -31,7 +31,7 @@ var sun = {
     y:height/2-width/10,
     light:document.getElementById("light"),
     lightsize:1,
-    pow:0.002
+    pow:0.0015
 };
 var earth = {
     img:document.getElementById("earth"),
@@ -150,8 +150,8 @@ function checkClick(event,object){
 
 function highScore() {
     context.fillStyle="rgba(211,35,235,"+alpha2+")";
-    if(isHiS && alpha2<1)alpha2+=0.01;
-    else if(!isHiS && alpha2>0)alpha2-=0.01;
+    if(isHiS && alpha2<1)alpha2+=0.02;
+    else if(!isHiS && alpha2>0)alpha2-=0.02;
     context.fillRect(50,50,width- 100,height-100);
     write("Ваш лучший счет: " + (getCookie("score")||"0"),width/2,125,30,"center",alpha2);
     write("Лучшие джедаи вселенной:",width/2,175,40,"center",alpha2);

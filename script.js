@@ -14,7 +14,7 @@ var rocket = {
 };
 
 var ufo = {
-    type:1,
+    type: 1,
     img: document.getElementById("ufo"),
     exist: false,
     size: width / 10,
@@ -22,12 +22,19 @@ var ufo = {
     stepY: 0
 };
 var or_ufo = {
-    type:2,
+    type: 2,
     img: document.getElementById("or_ufo"),
     exist: false,
     size: width / 10,
     stepX: 0,
     stepY: 0
+};
+var batUFO = {
+    type: 1,//(1 - ufo or 2 - or_ufo )'s img
+    fire: document.getElementById("fire"),
+    exist: false,
+    size: width / 10,
+    count: 120
 };
 
 var enemy = [];
@@ -39,16 +46,6 @@ var explosion = {
     size: 40,
     x: 0,
     y: 0
-};
-
-var batUFO = {
-    img1: document.getElementById("ufo"),
-    img2: document.getElementById("or_ufo"),
-    type: 1,//1 or 2 img
-    fire: document.getElementById("fire"),
-    exist: false,
-    size: width / 10,
-    count: 120
 };
 
 var heart = {
@@ -82,39 +79,34 @@ var life = {
     y: 0
 };
 
+var star = {
+    img: document.getElementById("star"),
+    size: width / 10,
+    exist: false,
+    pow: 1,
+    count: 120,
+    x: 0,
+    y: 0
+};
+
 //отрисовка обЪектов
-function drawBAT_UFO(x, y,type) {
+function drawBAT_UFO(batUFO, x, y, type) {
     if (x && y) {
         batUFO.exist = true;
         batUFO.count = 120;
         batUFO.x = x;
         batUFO.y = y;
     }
-    if(type)
+    else batUFO.count--;
+    if (type)
         batUFO.type = type;
     if (batUFO.type === 1)
         context.drawImage(ufo.img, batUFO.x, batUFO.y, batUFO.size, batUFO.size);
     else if (batUFO.type === 2)
         context.drawImage(or_ufo.img, batUFO.x, batUFO.y, batUFO.size, batUFO.size);
     context.drawImage(batUFO.fire, batUFO.x, batUFO.y, batUFO.size, batUFO.size);
-}
-
-function drawEX(x, y) {
-    if (x && y) {
-        context.drawImage(explosion.img, x - explosion.size / 2, y - explosion.size / 2, explosion.size, explosion.size);
-        explosion.x = x;
-        explosion.y = y;
-        explosion.exist = true;
-        explosion.count = 60;
-    }
-    else
-        context.drawImage(explosion.img, explosion.x - 50, explosion.y - 50, 100, 100);
-}
-
-function drawBG() {
-    context.fillStyle = context.createPattern(background, "no-repeat");
-    context.fillRect(0, 0, width, height);
-    context.strokeRect(0, 0, width, height);
+    if (batUFO.count <= 0)
+        enemy.splice(batUFO.id, 1);
 }
 
 function drawUFO(ufo, rand, x, y) {
@@ -138,9 +130,8 @@ function drawUFO(ufo, rand, x, y) {
     context.drawImage(ufo.img, ux, uy, ufo.size, ufo.size);
     ufo.x = ux;
     ufo.y = uy;
-    ufo.exist = true;
-    if ((x + ufo.size / 2) > rocket.x && x < (rocket.x + rocket.size)) {
-        if ((y + ufo.size / 2) > rocket.y && y < (rocket.y + rocket.size)) {
+    if ((ux + ufo.size / 2) > rocket.x && ux < (rocket.x + rocket.size) && ufo.exist) {
+        if ((uy + ufo.size / 2) > rocket.y && uy < (rocket.y + rocket.size)) {
             ufo.exist = false;
             enemy.splice(ufo.id, 1);
             heart.life--;
@@ -151,6 +142,24 @@ function drawUFO(ufo, rand, x, y) {
     if (heart.life < 0) {
         gameOver();
     }
+}
+
+function drawEX(x, y) {
+    if (x && y) {
+        context.drawImage(explosion.img, x - explosion.size / 2, y - explosion.size / 2, explosion.size, explosion.size);
+        explosion.x = x;
+        explosion.y = y;
+        explosion.exist = true;
+        explosion.count = 60;
+    }
+    else
+        context.drawImage(explosion.img, explosion.x - 50, explosion.y - 50, 100, 100);
+}
+
+function drawBG() {
+    context.fillStyle = context.createPattern(background, "no-repeat");
+    context.fillRect(0, 0, width, height);
+    context.strokeRect(0, 0, width, height);
 }
 
 function drawRocket(a) {
@@ -198,16 +207,16 @@ function drawBullet(x, y, a) {
     bullet.y = y;
 }
 
-function drawLife(x, y) {
+function drawBonus(bonus,x, y) {
     if (x && y) {
-        context.drawImage(life.img, x - life.size / 2, y - life.size / 2, life.size, life.size);
-        life.x = x;
-        life.y = y;
-        life.exist = true;
-        life.count = 60;
+        context.drawImage(bonus.img, x - bonus.size / 2, y - bonus.size / 2, bonus.size, bonus.size);
+        bonus.x = x;
+        bonus.y = y;
+        bonus.exist = true;
+        bonus.count = 60;
     }
     else
-        context.drawImage(life.img, life.x - life.size / 2, life.y - life.size / 2, life.size, life.size);
+        context.drawImage(bonus.img, bonus.x - bonus.size / 2, bonus.y - bonus.size / 2, bonus.size, bonus.size);
 }
 
 //----------------игровой процесс---------------------------------------------------------------------------------------
@@ -219,23 +228,28 @@ var shotX = "", shotY = "";
 var x = 0, y = 0;
 var positionX = true;
 var points = 0;
+var enemy_points=0;
 var alpha = 0.5;
 var pow = 0.02;
 var wave = 1;
 
 function gameStart() {
     if (!isTutor) count++;
+    //шаг обычных тарелок
     if (count === (60 * stepTime)) {
         count = 0;
-        for (var i=0; i<enemy.length;i++)
-            if(enemy[i].type===1)step(enemy[i]);
+        for (var i = 0; i < enemy.length; i++) {
+            if (enemy[i].type === 1 && !enemy[i].fire) step(enemy[i]);
+        }
+
     }
-    if (Math.random()>=0.5 && !isTutor && enemy.length<=points/6) {
-        add_cloneUFO(enemy,ufo);
+    //создание врагов
+    if (Math.random() >= 0.5 && !isTutor && active_ufo()) {
+        add_cloneUFO(enemy, ufo);
     }
-    if (wave > 1 && Math.random()<0.5 && enemy.length<=points/6) {
-        add_cloneUFO(enemy,or_ufo);
-        animUFO2(enemy[enemy.length-1],enemy.length-1);
+    if (wave > 1 && Math.random() < 0.5 && active_ufo()) {
+        add_cloneUFO(enemy, or_ufo);
+        animUFO2(enemy[enemy.length - 1], enemy.length - 1);
     }
     //--------для обЪектов, исчезающий после некоторого времени-----------
     if (explosion.exist && explosion.count > 0) {
@@ -244,46 +258,25 @@ function gameStart() {
             explosion.exist = false;
         }
     }
-    if (batUFO.exist && batUFO.count > 0) {
-        batUFO.count--;
-        if (batUFO.count <= 0) {
-            batUFO.exist = false;
-        }
+    if (points % 5 === 0 && !life.exist && !star.exist && points > 0) {
+        createBonus();
     }
-    if (points % 5 === 0 && !life.exist && points>0) {
-        var randXY = randomXY();
-        drawLife(randXY.x, randXY.y);
-        animate({
-            duration: life.count * 1000,
-            timing: function (timeFraction) {
-                return timeFraction;
-            },
-            draw: function (progress) {
-                if (life.size > width / 9 || life.size < width / 14) {
-                    life.pow = -life.pow;
-                }
-                life.size += life.pow;
-                drawLife();
-                return life.exist && game;
-            },
-            onEnd: function () {
-                life.exist = false;
-            }
-        })
-    }
+    //обновление экрана
     clearALL();
     if (game) requestAnimationFrame(gameStart);
+
     if (isTutor)
         requestAnimationFrame(tutor);
 }
 
-function gameOver(){
-    shotX="";
-    shotY="";
-    wave=1;
+//обнуление всех параметров
+function gameOver() {
+    shotX = "";
+    shotY = "";
+    wave = 1;
     menu = true;
     game = false;
-    enemy.length=0;
+    enemy.length = 0;
     life.exist = false;
     logoText = "Ваш счет: " + points;
     requestAnimationFrame(animMenu);
@@ -299,11 +292,13 @@ function clearALL() {
     drawRocket();
     drawHearts();
     drawXY();
-    for (var i =0;i<enemy.length;i++)
-        drawUFO(enemy[i], false);
-    for (i =0;i<enemy.length;i++)drawUFO(enemy[i], false);
-    if (life.exist) drawLife();
-    if (batUFO.exist) drawBAT_UFO();
+    for (var i = 0; i < enemy.length; i++) {
+        if (enemy[i].id !== i) enemy[i].id = i;
+        if (!enemy[i].fire) drawUFO(enemy[i], false);
+        else if (enemy[i].fire) drawBAT_UFO(enemy[i]);
+    }
+    if (life.exist) drawBonus(life);
+    if (star.exist) drawBonus(star);
     if (explosion.exist) drawEX(false);
     write(Math.round(stepTime - count / 60), width / 20, height / 5, 50);
     write(points, 0.9 * width, 0.2 * height);
@@ -370,33 +365,39 @@ function shot(ar) {
                     switch (hitting[0]) {
                         case (1):
                         case (2):
-                            object = enemy;
-                            break;
+                            object = enemy;break;
                         case (3):
                             object = life;
+                            heart.life++;
+                            life.exist = false;
+                            break;
+                        case (4):
+                            object = star;
+                            star.exist=false;
+                            destroy_all();
                             break;
                     }
                     if (object !== null) {
+
                         points++;
-                        if (points > (getCookie("score") || 0)){
+                        if (points - enemy_points > points/5)
+                            enemy_points+=points/6;
+                        else enemy_points = points;
+
+                        if (points > (getCookie("score") || 0)) {
                             setCookie("score", points);
-                            notice("Новый рекорд!\n"+points,180);
+                            notice("Новый рекорд!\n" + points, 180);
                         }
-                        if (hitting [0]=== 3) {
-                            heart.life++;
-                            life.exist = false;
-                        }
-                        else {
-                            batUFO.type = hitting[0];
-                            drawBAT_UFO(object[hitting[1]].x, object[hitting[1]].y);
+                        if (hitting[0]<3){
+                            object[hitting[1]].exist = false;
+                            object[hitting[1]] = getClone(batUFO, object[hitting[1]]);
                             count = 0;
                             if (stepTime > 5) stepTime -= 1;
                             //усовершенствовать после введения других видов противников
-                            if (points>=5 && !isTutor && wave < 2) {
-                                wave=2;
+                            if (points >= 5 && !isTutor && wave < 2) {
+                                wave = 2;
                                 stepTime = gameCount;
                             }
-                            object.splice(hitting[1],1);
                         }
                     }
                     drawEX(x, y);
@@ -407,13 +408,18 @@ function shot(ar) {
 }
 
 function checkShot(x, y) {
-    for (var i = 0;i<enemy.length;i++)
-        if (checkClick({pageX: x, pageY: y}, enemy[i])) return [enemy[i].type,i];
+    for (var i = 0; i < enemy.length; i++)
+        if (checkClick({pageX: x, pageY: y}, enemy[i])) return [enemy[i].type, i];
     if (checkClick({pageX: x, pageY: y}, {
             x: life.x - width / 12,
             y: life.y - width / 12,
             size: width / 6
-        })) return [3,0];
+        })) return [3, 0];
+    if (checkClick({pageX: x, pageY: y}, {
+            x: star.x - width / 12,
+            y: star.y - width / 12,
+            size: width / 6
+        })) return [4, 0];
     return 0;
 }
 
@@ -443,7 +449,7 @@ function drawShot() {
         context.stroke();
         context.closePath();
     }
-    if(game)requestAnimationFrame(drawShot);
+    if (game) requestAnimationFrame(drawShot);
 }
 
 function inputXY(keyCode) {
@@ -552,22 +558,23 @@ function step(ufo) {
     });
 }
 
-function animUFO2(or_ufo,id) {
-    var x = or_ufo.x;
+function animUFO2(or_ufo, id) {
+    var x = or_ufo.x;//X and y у тарелки - левый верхний угол
     var y = or_ufo.y;
     animate({
-        duration: stepTime * 1500,
+        duration: 2*stepTime*1000,
         timing: function (timeFraction) {
             return timeFraction
         },
         draw: function (progress) {
-            if (or_ufo.exist) drawUFO(or_ufo, false, x - (x - width / 2) * progress, y - (y - height / 2) * progress);
+            or_ufo.x = x - (x - width / 2) * progress-or_ufo.size/2;
+            or_ufo.y = y - (y - height / 2) * progress-or_ufo.size/2;
+            //if (or_ufo.exist) drawUFO(or_ufo, false, x - (x - width / 2) * progress, y - (y - height / 2) * progress);
             return (or_ufo.exist && game);
         },
         onEnd: function () {
-            if(or_ufo.exist) {
+            if (or_ufo.exist) {
                 enemy.splice(id, 1);
-                heart.life--;
             }
         }
     });
@@ -672,31 +679,81 @@ function animate(options) {
     });
 }
 
+function createBonus() {
+    var randXY = randomXY();
+    var bonus = {};
+    if (Math.random()>=0.4) bonus=star;
+    else bonus = life;
+    drawBonus(bonus,randXY.x, randXY.y);
+    animate({
+        duration: bonus.count * 1000,
+        timing: function (timeFraction) {
+            return timeFraction;
+        },
+        draw: function () {
+            if (bonus.size > width / 9 || bonus.size < width / 14) {
+                bonus.pow = -bonus.pow;
+            }
+            bonus.size += bonus.pow;
+            drawBonus(bonus);
+            return bonus.exist && game;
+        },
+        onEnd: function () {
+            bonus.exist = false;
+        }
+    })
+}
+
 function randomXY() {
     var ux = 0, uy = 0;
-    while (ux + ufo.size / 2 > (width / 2 - uVector * 60) && ux + ufo.size / 2 < (width / 2 + uVector * 60) &&
-    uy + ufo.size / 2 > (height / 2 - uVector * 60) && uy + ufo.size / 2 < (height / 2 + uVector * 60) || ux === 0 && uy === 0) {
-        ux = Math.random() * (width - 2 * ufo.size) + ufo.size;
-        uy = Math.random() * (height - 2 * ufo.size) + ufo.size;
+    var rand=120;
+    while (ux + ufo.size / 2 > (width / 2 - uVector * rand) && ux + ufo.size / 2 < (width / 2 + uVector * rand) &&
+    uy + ufo.size / 2 > (height / 2 - uVector * rand) && uy + ufo.size / 2 < (height / 2 + uVector * rand) || ux === 0 && uy === 0) {
+        ux = Math.random() * width;
+        uy = Math.random() * height;
     }
     return {x: ux, y: uy};
 }
 
-function add_cloneUFO(array,object){
+function active_ufo() {
+    var ufo_count = 0;
+    for (var i = 0; i < enemy.length; i++)
+        if (!enemy[i].fire) ufo_count++;
+    if (enemy_points===0 && enemy.length>0) return false;
+    else return ufo_count <= enemy_points / 4;
+}
+
+function add_cloneUFO(array, object) {
     var clone = {};
     for (var key in ufo) {
-        clone[key]=object[key];
+        clone[key] = object[key];
     }
-    clone.id=enemy.length;
+    clone.id = enemy.length;
     array.push(clone);
-    drawUFO(array[array.length-1],true);
+    drawUFO(array[array.length - 1], true);
 }
 
-function destroy_all(){
-    for (var i=0;i<enemy.length;i++){
-        drawBAT_UFO(enemy[i].x, enemy[i].y,enemy[i].type);
+function getClone(object, data) {
+    var clone = {};
+    for (var key in batUFO) {
+        clone[key] = object[key];
     }
-    enemy=[];
+    if (data) {
+        clone.x = data.x;
+        clone.y = data.y;
+        clone.type = data.type;
+        clone.id = data.id;
+    }
+    return clone;
 }
 
-//определение по куки, пройден ли раньше тутор
+function destroy_all() {
+    var array = [];
+    for (var i = 0; i < enemy.length; i++) {
+        array[i] = getClone(batUFO, enemy[i]);
+        points++;
+    }
+    enemy = array;
+    enemy_points=0;
+    stepTime = gameCount;
+}

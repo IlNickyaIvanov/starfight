@@ -9,7 +9,7 @@ var note={
     alpha:0,
     pow:0.04
 };
-
+//определение по куки, пройден ли раньше тутор
 if(!getCookie("tutorial")){
     isTutor=true;
     notice("Welcome Junior!",180);
